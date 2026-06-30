@@ -72,6 +72,9 @@ export default function Admin() {
             Padrão / default: <code className="text-foreground">velox-admin</code><br />
             (defina <code>ADMIN_PASSWORD</code> no Vercel)
           </p>
+          <Link href="/guia" className="mt-4 block text-center text-xs font-semibold text-aurora hover:underline">
+            📘 Como a loja funciona — Guia do lojista
+          </Link>
         </form>
       </main>
     );
