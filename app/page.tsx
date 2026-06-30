@@ -51,6 +51,9 @@ function Hero() {
               ▶ {t("hero.cta2")}
             </button>
           </div>
+          <a href="/studio" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-aurora hover:underline">
+            ✨ {t("hero.studio")} →
+          </a>
 
           <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted">
             <span className="flex items-center gap-2"><Stars n={5} /> {t("hero.rating")}</span>

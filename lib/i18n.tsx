@@ -12,6 +12,7 @@ export const dict: Dict = {
   "nav.how": { pt: "Como funciona", en: "How it works" },
   "nav.reviews": { pt: "Avaliações", en: "Reviews" },
   "nav.faq": { pt: "Dúvidas", en: "FAQ" },
+  "nav.studio": { pt: "App Studio", en: "Studio App" },
   "nav.buy": { pt: "Comprar", en: "Buy now" },
 
   "ann.1": { pt: "✦ Frete grátis para todo o Brasil", en: "✦ Free worldwide shipping" },
@@ -30,6 +31,7 @@ export const dict: Dict = {
   "hero.cta2": { pt: "Ver em ação", en: "See it in action" },
   "hero.rating": { pt: "4,9/5 de 12.480 avaliações", en: "4.9/5 from 12,480 reviews" },
   "hero.ships": { pt: "Envio em 24h", en: "Ships in 24h" },
+  "hero.studio": { pt: "Experimente o app grátis no navegador", en: "Try the free app in your browser" },
 
   "logos.title": { pt: "VISTO E AMADO EM", en: "AS SEEN ON" },
 
