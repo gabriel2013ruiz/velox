@@ -46,12 +46,41 @@ lib/
   cart.tsx          # cart context (localStorage-backed)
 ```
 
-## 💳 Going live with real payments
+## 🖼️ Product imagery
 
-The checkout is a working UI demo (no real charge). To accept real money, wire the
-"Pay" action to a provider — e.g. **Stripe** (cards / Apple Pay / Google Pay), **PayPal**,
-and a Brazilian gateway such as **Mercado Pago** or **Pagar.me** for **Pix**. Add your
-API keys as environment variables in the Vercel dashboard.
+Real galaxy-projection photos (royalty-free, Pexels license) are self-hosted in
+`public/products/` and shown in the hero, the bundle cards, the cart/checkout, and a
+lightbox **gallery**. Self-hosting means there are no external image dependencies that
+can break.
+
+## 💳 Payments, email & admin — already wired, key-gated
+
+The whole backend is built and **works in demo mode with no setup**. Add an
+environment variable (see `.env.example`) and that piece switches from demo to live —
+no code changes:
+
+| Feature | Provider | Env var | Without it |
+|---|---|---|---|
+| Card / Apple Pay / Google Pay | **Stripe** | `STRIPE_SECRET_KEY` | Demo success screen |
+| **Pix** | **Mercado Pago** | `MP_ACCESS_TOKEN` | Demo success screen |
+| Order confirmation email | **Resend** | `RESEND_API_KEY` | Skipped silently |
+| Order storage for `/admin` | **Vercel KV / Upstash** | `KV_REST_API_URL` + `KV_REST_API_TOKEN` | In-memory (resets) |
+| Admin password | — | `ADMIN_PASSWORD` | Defaults to `velox-admin` |
+
+**API routes**
+
+- `POST /api/checkout` — returns a hosted Stripe/Mercado Pago payment URL when keys are set, otherwise `{ demo: true }`.
+- `POST /api/order` — records the order and sends the confirmation email.
+- `GET /api/orders` — lists orders for the admin (requires `x-admin-password` header).
+
+**Admin dashboard:** visit **`/admin`**, sign in (default password `velox-admin`), and see
+orders, revenue and units sold.
+
+### Go fully live in 5 minutes
+1. Create accounts: [Stripe](https://dashboard.stripe.com), [Mercado Pago](https://www.mercadopago.com.br/developers) (Pix), [Resend](https://resend.com) (email).
+2. In **Vercel → Settings → Environment Variables**, paste the keys from `.env.example`.
+3. Add a **Vercel KV** store (Storage tab) so orders persist.
+4. Redeploy. Done — real money, real emails, real order history.
 
 ---
 

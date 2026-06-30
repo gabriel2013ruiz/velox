@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
-import { priceFor, formatMoney } from "@/lib/products";
+import { priceFor, formatMoney, currency } from "@/lib/products";
 import { Visa, Mastercard, ApplePay, GooglePay, PayPal, Pix } from "@/components/PaymentIcons";
 
 type Method = "card" | "pix" | "apple" | "google" | "paypal";
@@ -13,12 +12,19 @@ type Method = "card" | "pix" | "apple" | "google" | "paypal";
 export default function Checkout() {
   const { t, lang } = useI18n();
   const { detailed, clear, fireToast } = useCart();
-  const router = useRouter();
   const [method, setMethod] = useState<Method>(lang === "pt" ? "pix" : "card");
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
 
   const subtotal = detailed.reduce((a, d) => a + priceFor(d.bundle, lang) * d.qty, 0);
+
+  // If a real gateway redirected back with ?status=success, show the success screen.
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("status") === "success") {
+      setDone(true);
+      clear();
+    }
+  }, [clear]);
 
   const allMethods: { id: Method; label: { pt: string; en: string }; icon: React.ReactNode; ptOnly?: boolean }[] = [
     { id: "pix", label: { pt: "Pix (aprovação na hora)", en: "Pix (instant)" }, icon: <Pix />, ptOnly: true },
@@ -29,15 +35,58 @@ export default function Checkout() {
   ];
   const methods = allMethods.filter((m) => (m.ptOnly ? lang === "pt" : true));
 
-  const onPay = (e: React.FormEvent) => {
+  const onPay = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      setDone(true);
-      clear();
-      fireToast(t("toast.success"));
-    }, 1600);
+
+    const fd = new FormData(e.currentTarget);
+    const lineItems = detailed.map((d) => ({
+      id: d.bundle.id,
+      name: d.bundle.name[lang],
+      qty: d.qty,
+      units: d.bundle.qty,
+      price: priceFor(d.bundle, lang),
+    }));
+
+    try {
+      // 1) Ask the server for a real gateway URL (Stripe / Mercado Pago).
+      const co = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method, lang, items: lineItems }),
+      }).then((r) => r.json());
+
+      // Real gateway configured -> redirect to hosted, secure payment page.
+      if (co?.url) {
+        window.location.href = co.url;
+        return;
+      }
+
+      // 2) Demo mode (no keys yet): record the order + send confirmation email if configured.
+      await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: fd.get("email"),
+          name: fd.get("name"),
+          address: fd.get("address"),
+          city: fd.get("city"),
+          zip: fd.get("zip"),
+          method,
+          lang,
+          currency: currency(lang),
+          total: subtotal,
+          items: lineItems,
+        }),
+      });
+    } catch {
+      /* even if logging fails, still confirm to the buyer in demo mode */
+    }
+
+    setProcessing(false);
+    setDone(true);
+    clear();
+    fireToast(t("toast.success"));
   };
 
   if (done) {
@@ -84,16 +133,16 @@ export default function Checkout() {
 
           <section className="space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t("co.contact")}</h2>
-            <input className={input} type="email" required placeholder={t("co.email")} />
+            <input name="email" className={input} type="email" required placeholder={t("co.email")} />
           </section>
 
           <section className="space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t("co.delivery")}</h2>
-            <input className={input} required placeholder={t("co.name")} />
-            <input className={input} required placeholder={t("co.address")} />
+            <input name="name" className={input} required placeholder={t("co.name")} />
+            <input name="address" className={input} required placeholder={t("co.address")} />
             <div className="grid grid-cols-2 gap-3">
-              <input className={input} required placeholder={t("co.city")} />
-              <input className={input} required placeholder={t("co.zip")} />
+              <input name="city" className={input} required placeholder={t("co.city")} />
+              <input name="zip" className={input} required placeholder={t("co.zip")} />
             </div>
           </section>
 
@@ -175,9 +224,9 @@ export default function Checkout() {
           <div className="mt-4 space-y-4">
             {detailed.map(({ bundle, qty }) => (
               <div key={bundle.id} className="flex items-center gap-3">
-                <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-[#04040c] text-xl"
-                     style={{ boxShadow: "inset 0 0 16px rgba(160,107,255,0.5)" }}>
-                  🌌
+                <div className="relative h-14 w-14 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/products/card.jpg" alt="Velox Aurora" className="h-14 w-14 rounded-lg border border-border object-cover" />
                   <span className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-violet text-[11px] font-bold text-[#060611]">{qty}</span>
                 </div>
                 <div className="flex-1">

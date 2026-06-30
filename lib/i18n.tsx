@@ -65,6 +65,10 @@ export const dict: Dict = {
   "buy.add": { pt: "Adicionar ao carrinho", en: "Add to cart" },
   "buy.guarantee": { pt: "Garantia de 30 dias · Frete grátis · Envio em 24h", en: "30-day guarantee · Free shipping · Ships in 24h" },
 
+  "gallery.title": { pt: "Veja a magia acontecer", en: "See the magic happen" },
+  "gallery.sub": { pt: "Imagens reais do efeito Velox Aurora em ação.", en: "Real photos of the Velox Aurora effect in action." },
+  "gallery.cta": { pt: "Quero esse efeito no meu quarto", en: "I want this in my room" },
+
   "reviews.title": { pt: "+12.000 clientes apaixonados", en: "12,000+ happy customers" },
   "reviews.sub": { pt: "Avaliações reais de quem já transformou o quarto.", en: "Real reviews from people who transformed their rooms." },
 

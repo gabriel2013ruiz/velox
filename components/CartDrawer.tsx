@@ -47,10 +47,8 @@ export function CartDrawer() {
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {detailed.map(({ bundle, qty }) => (
                 <div key={bundle.id} className="flex gap-3 rounded-xl border border-border bg-card-2/40 p-3">
-                  <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-[#04040c] text-2xl"
-                       style={{ boxShadow: "inset 0 0 18px rgba(160,107,255,0.5)" }}>
-                    🌌
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/products/card.jpg" alt="Velox Aurora" className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover" />
                   <div className="flex flex-1 flex-col">
                     <div className="flex justify-between gap-2">
                       <p className="font-semibold text-sm">{bundle.name[lang]}</p>

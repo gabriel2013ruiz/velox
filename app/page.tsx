@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Nav } from "@/components/Nav";
 import { CartDrawer, Toast } from "@/components/CartDrawer";
 import { ProjectorVisual } from "@/components/ProjectorVisual";
+import { Gallery } from "@/components/Gallery";
 import { Stars } from "@/components/Stars";
 import { PaymentRow } from "@/components/PaymentIcons";
 import { useI18n } from "@/lib/i18n";
@@ -55,8 +56,26 @@ function Hero() {
           <div className="mt-5"><PaymentRow lang={lang} /></div>
         </div>
 
-        <div className="fade-up">
-          <ProjectorVisual />
+        <div className="fade-up relative">
+          <div className="relative overflow-hidden rounded-[28px] border border-border pulse-glow">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/products/hero.jpg"
+              alt="Velox Aurora projetando uma galáxia"
+              className="aspect-[4/5] w-full object-cover sm:aspect-[5/4]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#060611]/70 via-transparent to-transparent" />
+            <div className="absolute left-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-bold tracking-[0.25em] backdrop-blur">
+              VELOX AURORA
+            </div>
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold backdrop-blur">
+              <Stars n={5} /> 4,9 · 12.480
+            </div>
+          </div>
+          {/* floating projector chip */}
+          <div className="absolute -bottom-6 -right-2 hidden w-36 rotate-3 sm:block">
+            <ProjectorVisual />
+          </div>
         </div>
       </div>
     </section>
@@ -179,9 +198,12 @@ function Buy() {
                 </span>
               )}
 
-              <div className="grid h-28 place-items-center rounded-2xl bg-[#04040c] text-5xl"
-                   style={{ boxShadow: "inset 0 0 30px rgba(160,107,255,0.45)" }}>
-                {b.qty === 1 ? "🌌" : b.qty === 2 ? "🌌🌌" : "🌌✨"}
+              <div className="relative h-40 overflow-hidden rounded-2xl border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/products/card.jpg" alt="Velox Aurora" className="h-full w-full object-cover" />
+                <span className="absolute right-3 top-3 grid h-8 min-w-8 place-items-center rounded-full bg-black/60 px-2 text-sm font-bold backdrop-blur">
+                  ×{b.qty}
+                </span>
               </div>
 
               <h3 className="mt-5 text-xl font-bold">{b.name[lang]}</h3>
@@ -341,6 +363,7 @@ export default function Home() {
         <Hero />
         <Logos />
         <Features />
+        <Gallery />
         <How />
         <Buy />
         <Reviews />
