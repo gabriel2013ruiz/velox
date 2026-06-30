@@ -112,8 +112,8 @@ export default function Studio() {
   };
 
   // live settings the animation loop reads without restarting
-  const settings = useRef({ theme, custom, speed, brightness, density, stars, shooting, music });
-  settings.current = { theme, custom, speed, brightness, density, stars, shooting, music };
+  const settings = useRef({ theme, custom, speed, brightness, density, stars, shooting, music, flash });
+  settings.current = { theme, custom, speed, brightness, density, stars, shooting, music, flash };
 
   // mic level (0..1)
   const levelRef = useRef(0);
@@ -269,7 +269,9 @@ export default function Studio() {
 
       const pal = s.theme === "custom" ? hexToPalette(s.custom) : THEMES[s.theme];
       const beat = s.music ? 0.55 + levelRef.current * 2.2 : 1;
-      const bright = s.brightness * beat;
+      // flash mode: the aurora pulses/flashes a few times per second
+      const pulse = s.flash ? 0.75 + 1.15 * Math.pow(0.5 + 0.5 * Math.sin(clock * 5.5), 6) : 1;
+      const bright = s.brightness * beat * pulse;
 
       // background
       ctx.globalCompositeOperation = "source-over";
@@ -532,7 +534,7 @@ export default function Studio() {
                 🎵 {lang === "pt" ? "Música" : "Music"}: {music ? "ON" : "OFF"}{!pro ? " 🔒" : ""}
               </button>
               <button onClick={() => setFlash((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${flash ? "bg-yellow-300 text-[#060611]" : "border border-border text-muted"}`}>
-                🔦 {lang === "pt" ? "Lanterna" : "Flashlight"}: {flash ? "ON" : "OFF"}
+                🔦 Flash: {flash ? "ON" : "OFF"}
               </button>
               <select
                 value={timerMin}
@@ -549,10 +551,10 @@ export default function Studio() {
               </button>
             </div>
 
-            <p className="mt-3 text-center text-[11px] text-muted">
+            <p className="mt-3 text-center text-[12px] leading-relaxed text-muted">
               {lang === "pt"
-                ? "🔦 A lanterna usa o flash do celular (luz branca) · espelhe na TV (Chromecast/AirPlay) para o efeito na parede 📺"
-                : "🔦 Flashlight uses your phone's flash (white light) · cast to your TV (Chromecast/AirPlay) for the wall effect 📺"}
+                ? "💡 Quer a galáxia GRANDE na parede? Espelhe a tela do seu celular na TV (Chromecast ou AirPlay) — aí a TV inteira vira a galáxia. 📺"
+                : "💡 Want the galaxy BIG on your wall? Mirror your phone screen to your TV (Chromecast or AirPlay) — then the whole TV becomes the galaxy. 📺"}
             </p>
           </div>
         </div>

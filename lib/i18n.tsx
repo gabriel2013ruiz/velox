@@ -19,6 +19,15 @@ export const dict: Dict = {
   "ann.2": { pt: "✦ Garantia de 30 dias ou seu dinheiro de volta", en: "✦ 30-day money-back guarantee" },
   "ann.3": { pt: "✦ +40.000 quartos transformados", en: "✦ 40,000+ rooms transformed" },
   "ann.4": { pt: "✦ Pague no Pix, cartão, Apple Pay ou PayPal", en: "✦ Pay with card, Apple Pay or PayPal" },
+  "ann.5": { pt: "✦ NOVO: experimente o app Velox Studio grátis", en: "✦ NEW: try the Velox Studio app free" },
+
+  "studiopromo.badge": { pt: "NOVO · APP GRÁTIS", en: "NEW · FREE APP" },
+  "studiopromo.title": { pt: "Não quer esperar a entrega?", en: "Don't want to wait for delivery?" },
+  "studiopromo.sub": { pt: "Transforme seu celular, tablet ou TV numa galáxia agora mesmo — direto no navegador, sem instalar nada. Escolha cores, temas, modo música e projete.", en: "Turn your phone, tablet or TV into a galaxy right now — in your browser, nothing to install. Pick colors, themes, music mode and project." },
+  "studiopromo.cta": { pt: "Abrir o app grátis →", en: "Open the free app →" },
+  "studiopromo.feat1": { pt: "🎨 Cores e temas", en: "🎨 Colors & themes" },
+  "studiopromo.feat2": { pt: "🎵 Modo música", en: "🎵 Music mode" },
+  "studiopromo.feat3": { pt: "📺 Espelhe na TV", en: "📺 Cast to TV" },
 
   "hero.badge": { pt: "Nº 1 em projetores de aurora no Brasil", en: "#1 aurora projector" },
   "hero.title1": { pt: "Transforme seu quarto", en: "Turn any room into" },

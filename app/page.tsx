@@ -16,7 +16,7 @@ import { bundles, reviews, priceFor, compareFor, formatMoney } from "@/lib/produ
 /* ---------- Announcement marquee ---------- */
 function Announcement() {
   const { t } = useI18n();
-  const msgs = [t("ann.1"), t("ann.2"), t("ann.3"), t("ann.4")];
+  const msgs = [t("ann.1"), t("ann.5"), t("ann.2"), t("ann.3"), t("ann.4")];
   const row = [...msgs, ...msgs];
   return (
     <div className="overflow-hidden border-b border-border bg-gradient-to-r from-violet/10 via-transparent to-teal/10 py-2 text-xs">
@@ -320,6 +320,28 @@ function Faq() {
   );
 }
 
+/* ---------- Studio app promo ---------- */
+function StudioPromo() {
+  const { t } = useI18n();
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 py-16">
+      <div className="aurora relative overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
+        <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-teal to-violet px-3 py-1 text-xs font-bold text-[#060611]">
+          {t("studiopromo.badge")}
+        </span>
+        <h2 className="mt-4 max-w-2xl text-3xl font-extrabold sm:text-4xl text-balance">{t("studiopromo.title")}</h2>
+        <p className="mt-3 max-w-xl text-muted">{t("studiopromo.sub")}</p>
+        <div className="mt-5 flex flex-wrap gap-3 text-sm">
+          <span className="rounded-full border border-border bg-card-2 px-3 py-1.5">{t("studiopromo.feat1")}</span>
+          <span className="rounded-full border border-border bg-card-2 px-3 py-1.5">{t("studiopromo.feat2")}</span>
+          <span className="rounded-full border border-border bg-card-2 px-3 py-1.5">{t("studiopromo.feat3")}</span>
+        </div>
+        <a href="/studio" className="btn-primary mt-7 inline-flex rounded-full px-7 py-3.5 text-base">{t("studiopromo.cta")}</a>
+      </div>
+    </section>
+  );
+}
+
 /* ---------- Final CTA ---------- */
 function FinalCta() {
   const { t, lang } = useI18n();
@@ -387,6 +409,7 @@ export default function Home() {
         <How />
         <Buy />
         <Reviews />
+        <StudioPromo />
         <Faq />
         <FinalCta />
       </main>
