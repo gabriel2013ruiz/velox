@@ -83,6 +83,23 @@ export function InteractiveDemo() {
           </button>
         </div>
 
+        {/* live aurora video */}
+        <div className="relative mb-4 overflow-hidden rounded-2xl border border-border">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster="/products/demo.jpg"
+            className="aspect-video w-full object-cover"
+          >
+            <source src="/products/aurora.mp4" type="video/mp4" />
+          </video>
+          <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1 text-xs font-bold backdrop-blur">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-pink" /> {t("demo.on")}
+          </span>
+        </div>
+
         {/* before / after slider */}
         <div
           ref={frameRef}

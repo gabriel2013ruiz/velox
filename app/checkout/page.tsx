@@ -6,6 +6,8 @@ import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { priceFor, formatMoney, currency } from "@/lib/products";
 import { Visa, Mastercard, ApplePay, GooglePay, PayPal, Pix } from "@/components/PaymentIcons";
+import { PixDirect } from "@/components/PixDirect";
+import { pixDirectEnabled } from "@/lib/pix";
 
 type Method = "card" | "pix" | "apple" | "google" | "paypal";
 
@@ -179,11 +181,14 @@ export default function Checkout() {
                       </div>
                     </div>
                   )}
-                  {method === m.id && m.id === "pix" && (
+                  {method === m.id && m.id === "pix" && pixDirectEnabled && (
+                    <PixDirect amount={subtotal} />
+                  )}
+                  {method === m.id && m.id === "pix" && !pixDirectEnabled && (
                     <div className="px-4 pb-4">
                       <div className="flex items-center gap-4 rounded-xl bg-card-2/50 p-4">
                         <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-white text-[8px] text-black">
-                          {/* faux QR */}
+                          {/* faux QR (demo) */}
                           <div className="grid grid-cols-5 gap-0.5">
                             {Array.from({ length: 25 }).map((_, i) => (
                               <span key={i} className={`h-2 w-2 ${[0,1,2,4,5,6,8,12,14,18,20,22,23,24].includes(i) ? "bg-black" : "bg-white"}`} />

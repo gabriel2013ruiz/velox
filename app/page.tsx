@@ -64,13 +64,20 @@ function Hero() {
             onClick={() => setDemoOpen(true)}
             className="group relative block w-full overflow-hidden rounded-[28px] border border-border pulse-glow text-left"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/products/hero.jpg"
-              alt="Velox Aurora projetando uma aurora boreal"
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/products/hero.jpg"
               className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105 sm:aspect-[5/4]"
-            />
+            >
+              <source src="/products/aurora.mp4" type="video/mp4" />
+            </video>
             <div className="absolute inset-0 bg-gradient-to-t from-[#060611]/70 via-transparent to-transparent" />
+            <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-xs font-bold backdrop-blur">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-pink" /> AO VIVO
+            </div>
             <div className="absolute left-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-bold tracking-[0.25em] backdrop-blur">
               VELOX AURORA
             </div>
