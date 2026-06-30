@@ -52,7 +52,7 @@ export default function Studio() {
   const [theme, setTheme] = useState<ThemeKey>("aurora");
   const [custom, setCustom] = useState("#a06bff");
   const [speed, setSpeed] = useState(1);
-  const [brightness, setBrightness] = useState(1);
+  const [brightness, setBrightness] = useState(1.25);
   const [stars, setStars] = useState(true);
   const [music, setMusic] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
@@ -162,18 +162,73 @@ export default function Studio() {
 
     let raf = 0;
     let w = 0, h = 0, dpr = 1;
+
+    // --- pre-rendered glow sprites (so stars actually SHINE) ---
+    const mkGlow = (size: number, rgb: string) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = size;
+      const g = c.getContext("2d")!;
+      const grd = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      grd.addColorStop(0, `rgba(${rgb},1)`);
+      grd.addColorStop(0.14, `rgba(${rgb},0.95)`);
+      grd.addColorStop(0.4, `rgba(${rgb},0.35)`);
+      grd.addColorStop(1, `rgba(${rgb},0)`);
+      g.fillStyle = grd;
+      g.fillRect(0, 0, size, size);
+      return c;
+    };
+    const mkFlare = (size: number) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = size;
+      const g = c.getContext("2d")!;
+      g.translate(size / 2, size / 2);
+      const line = () => {
+        const grd = g.createLinearGradient(-size / 2, 0, size / 2, 0);
+        grd.addColorStop(0, "rgba(255,255,255,0)");
+        grd.addColorStop(0.5, "rgba(255,255,255,0.9)");
+        grd.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = grd;
+        g.fillRect(-size / 2, -0.9, size, 1.8);
+      };
+      line();
+      g.rotate(Math.PI / 2);
+      line();
+      return c;
+    };
+    const spriteWhite = mkGlow(64, "255,255,255");
+    const spriteBlue = mkGlow(64, "168,206,255");
+    const spriteGreen = mkGlow(48, "120,255,170");
+    const flare = mkFlare(90);
+
+    const small = typeof window !== "undefined" && window.innerWidth < 640;
+    const N = small ? 280 : 460;
+    const NG = small ? 70 : 130;
+    const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+    const stars = Array.from({ length: N }, () => {
+      const big = Math.random() < 0.07;
+      return {
+        x: rnd(-0.4, 1.4),
+        y: rnd(-0.4, 1.4),
+        s: big ? rnd(16, 30) : rnd(3, 9),
+        ph: Math.random() * Math.PI * 2,
+        tw: rnd(0.25, 0.9),
+        blue: Math.random() < 0.4,
+        big,
+      };
+    });
+    const greens = Array.from({ length: NG }, () => ({
+      x: rnd(-0.4, 1.4),
+      y: rnd(-0.4, 1.4),
+      s: rnd(4, 8),
+      ph: Math.random() * Math.PI * 2,
+    }));
     const blobs = Array.from({ length: 6 }, (_, i) => ({
-      bx: 0.2 + (i / 6) * 0.6,
-      by: 0.3 + (i % 3) * 0.2,
+      bx: 0.15 + (i / 6) * 0.7,
+      by: 0.25 + (i % 3) * 0.22,
       phase: i * 1.7,
       ci: i % 4,
-      rad: 0.5 + (i % 3) * 0.18,
-    }));
-    const starField = Array.from({ length: 160 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      r: Math.random() * 1.6 + 0.3,
-      ph: Math.random() * Math.PI * 2,
+      rad: 0.55 + (i % 3) * 0.2,
     }));
 
     const resize = () => {
@@ -196,42 +251,64 @@ export default function Studio() {
       clock += dt * s.speed;
 
       const pal = s.theme === "custom" ? hexToPalette(s.custom) : THEMES[s.theme];
-      const beat = s.music ? 0.6 + levelRef.current * 1.8 : 1;
+      const beat = s.music ? 0.55 + levelRef.current * 2.2 : 1;
       const bright = s.brightness * beat;
 
+      // background
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "#04040a";
+      ctx.fillStyle = "#03030a";
       ctx.fillRect(0, 0, w, h);
 
-      // stars
-      if (s.stars) {
-        for (const st of starField) {
-          const tw = 0.5 + 0.5 * Math.sin(clock * 2 + st.ph);
-          ctx.globalAlpha = tw * 0.8 * Math.min(bright, 1.2);
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(st.x * w, st.y * h, st.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // aurora blobs
+      // nebula clouds (drift)
       ctx.globalCompositeOperation = "lighter";
       for (const b of blobs) {
-        const x = (b.bx + Math.sin(clock * 0.5 + b.phase) * 0.16) * w;
-        const y = (b.by + Math.cos(clock * 0.4 + b.phase) * 0.14) * h;
+        const x = (b.bx + Math.sin(clock * 0.45 + b.phase) * 0.16) * w;
+        const y = (b.by + Math.cos(clock * 0.38 + b.phase) * 0.14) * h;
         const R = b.rad * Math.min(w, h) * (0.9 + 0.15 * Math.sin(clock + b.phase)) * (s.music ? beat : 1);
         const [r, g, bl] = pal[b.ci % pal.length];
         const grad = ctx.createRadialGradient(x, y, 0, x, y, R);
-        const a = 0.42 * bright;
-        grad.addColorStop(0, `rgba(${r},${g},${bl},${Math.min(a, 0.9)})`);
-        grad.addColorStop(0.5, `rgba(${r},${g},${bl},${Math.min(a * 0.4, 0.5)})`);
+        const a = 0.5 * bright;
+        grad.addColorStop(0, `rgba(${r},${g},${bl},${Math.min(a, 0.95)})`);
+        grad.addColorStop(0.45, `rgba(${r},${g},${bl},${Math.min(a * 0.4, 0.5)})`);
         grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(x, y, R, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      // rotating starfield + green laser dots (the "projector" effect)
+      if (s.stars) {
+        const cx = w / 2, cy = h / 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(clock * 0.05);
+        ctx.translate(-cx, -cy);
+        ctx.globalCompositeOperation = "lighter";
+
+        for (const st of stars) {
+          const px = st.x * w, py = st.y * h;
+          const tw = 1 - st.tw * (0.5 + 0.5 * Math.sin(clock * 1.7 + st.ph));
+          const size = st.s * (0.9 + 0.25 * Math.sin(clock + st.ph)) * (s.music ? 0.8 + beat * 0.4 : 1);
+          ctx.globalAlpha = Math.min(1, tw * bright);
+          ctx.drawImage(st.blue ? spriteBlue : spriteWhite, px - size / 2, py - size / 2, size, size);
+          if (st.big) {
+            const fs = size * 2.6;
+            ctx.globalAlpha = Math.min(1, tw * 0.8 * bright);
+            ctx.drawImage(flare, px - fs / 2, py - fs / 2, fs, fs);
+          }
+        }
+
+        for (const gd of greens) {
+          const px = gd.x * w, py = gd.y * h;
+          const tw = 0.6 + 0.4 * Math.sin(clock * 2.2 + gd.ph);
+          const size = gd.s * (s.music ? 0.8 + beat * 0.4 : 1);
+          ctx.globalAlpha = Math.min(1, tw * 0.9 * bright);
+          ctx.drawImage(spriteGreen, px - size / 2, py - size / 2, size, size);
+        }
+        ctx.restore();
+      }
+
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(draw);
     };
