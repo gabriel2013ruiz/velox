@@ -13,7 +13,7 @@ type ThemeKey = "aurora" | "galaxy" | "sunset" | "ocean" | "fire" | "forest" | "
 
 const THEMES: Record<Exclude<ThemeKey, "custom">, [number, number, number][]> = {
   aurora: [[52, 245, 197], [160, 107, 255], [255, 92, 200], [58, 160, 255]],
-  galaxy: [[58, 160, 255], [160, 107, 255], [255, 92, 200], [99, 102, 241]],
+  galaxy: [[140, 90, 255], [210, 80, 230], [60, 210, 210], [90, 120, 255]],
   sunset: [[255, 140, 60], [255, 90, 120], [200, 80, 200], [255, 200, 80]],
   ocean: [[34, 211, 238], [59, 130, 246], [45, 212, 191], [37, 99, 235]],
   fire: [[255, 80, 30], [255, 160, 40], [255, 220, 80], [220, 40, 40]],
@@ -49,14 +49,20 @@ export default function Studio() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const [theme, setTheme] = useState<ThemeKey>("aurora");
+  const [theme, setTheme] = useState<ThemeKey>("galaxy");
   const [custom, setCustom] = useState("#a06bff");
   const [speed, setSpeed] = useState(1);
   const [brightness, setBrightness] = useState(1.25);
+  const [density, setDensity] = useState(0.9);
   const [stars, setStars] = useState(true);
+  const [shooting, setShooting] = useState(true);
   const [music, setMusic] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [timerMin, setTimerMin] = useState(0);
+  const [sleeping, setSleeping] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
   const [isFull, setIsFull] = useState(false);
+  const flashRef = useRef<MediaStream | null>(null);
 
   // Pro paywall
   const [pro, setPro] = useState(false);
@@ -106,8 +112,8 @@ export default function Studio() {
   };
 
   // live settings the animation loop reads without restarting
-  const settings = useRef({ theme, custom, speed, brightness, stars, music });
-  settings.current = { theme, custom, speed, brightness, stars, music };
+  const settings = useRef({ theme, custom, speed, brightness, density, stars, shooting, music });
+  settings.current = { theme, custom, speed, brightness, density, stars, shooting, music };
 
   // mic level (0..1)
   const levelRef = useRef(0);
@@ -223,6 +229,17 @@ export default function Studio() {
       s: rnd(4, 8),
       ph: Math.random() * Math.PI * 2,
     }));
+    // dense fine "dust" stars for the covered-in-stars look
+    const NF = small ? 360 : 700;
+    const fine = Array.from({ length: NF }, () => ({
+      x: rnd(-0.4, 1.4),
+      y: rnd(-0.4, 1.4),
+      sz: rnd(0.6, 1.9),
+      ph: Math.random() * Math.PI * 2,
+      blue: Math.random() < 0.35,
+    }));
+    type Shot = { x: number; y: number; vx: number; vy: number; life: number; len: number };
+    const shots: Shot[] = [];
     const blobs = Array.from({ length: 6 }, (_, i) => ({
       bx: 0.15 + (i / 6) * 0.7,
       by: 0.25 + (i % 3) * 0.22,
@@ -278,6 +295,7 @@ export default function Studio() {
       }
 
       // rotating starfield + green laser dots (the "projector" effect)
+      const dens = Math.max(0.15, Math.min(1, s.density));
       if (s.stars) {
         const cx = w / 2, cy = h / 2;
         ctx.save();
@@ -286,7 +304,20 @@ export default function Studio() {
         ctx.translate(-cx, -cy);
         ctx.globalCompositeOperation = "lighter";
 
-        for (const st of stars) {
+        // fine dust stars
+        const fineCount = Math.floor(fine.length * dens);
+        for (let i = 0; i < fineCount; i++) {
+          const st = fine[i];
+          const tw = 0.35 + 0.65 * Math.abs(Math.sin(clock * 1.4 + st.ph));
+          ctx.globalAlpha = Math.min(1, tw * 0.95 * bright);
+          ctx.fillStyle = st.blue ? "#bcd4ff" : "#ffffff";
+          ctx.fillRect(st.x * w, st.y * h, st.sz, st.sz);
+        }
+
+        // bright glowing stars
+        const starCount = Math.floor(stars.length * dens);
+        for (let i = 0; i < starCount; i++) {
+          const st = stars[i];
           const px = st.x * w, py = st.y * h;
           const tw = 1 - st.tw * (0.5 + 0.5 * Math.sin(clock * 1.7 + st.ph));
           const size = st.s * (0.9 + 0.25 * Math.sin(clock + st.ph)) * (s.music ? 0.8 + beat * 0.4 : 1);
@@ -299,14 +330,51 @@ export default function Studio() {
           }
         }
 
-        for (const gd of greens) {
+        // green laser dots
+        const greenCount = Math.floor(greens.length * dens);
+        for (let i = 0; i < greenCount; i++) {
+          const gd = greens[i];
           const px = gd.x * w, py = gd.y * h;
           const tw = 0.6 + 0.4 * Math.sin(clock * 2.2 + gd.ph);
           const size = gd.s * (s.music ? 0.8 + beat * 0.4 : 1);
-          ctx.globalAlpha = Math.min(1, tw * 0.9 * bright);
+          ctx.globalAlpha = Math.min(1, tw * 0.95 * bright);
           ctx.drawImage(spriteGreen, px - size / 2, py - size / 2, size, size);
         }
         ctx.restore();
+      }
+
+      // shooting stars (screen space, not rotated)
+      if (s.shooting) {
+        if (Math.random() < 0.016) {
+          const fromLeft = Math.random() < 0.5;
+          shots.push({
+            x: rnd(0.1, 0.9) * w,
+            y: rnd(0, 0.35) * h,
+            vx: (fromLeft ? 1 : -1) * rnd(0.45, 0.75) * w,
+            vy: rnd(0.28, 0.55) * h,
+            life: 1,
+            len: rnd(90, 180),
+          });
+        }
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = shots.length - 1; i >= 0; i--) {
+          const sh = shots[i];
+          sh.x += sh.vx * dt;
+          sh.y += sh.vy * dt;
+          sh.life -= dt * 0.8;
+          if (sh.life <= 0 || sh.x < -60 || sh.x > w + 60 || sh.y > h + 60) { shots.splice(i, 1); continue; }
+          const ang = Math.atan2(sh.vy, sh.vx);
+          const tx = sh.x - Math.cos(ang) * sh.len, ty = sh.y - Math.sin(ang) * sh.len;
+          const grad = ctx.createLinearGradient(sh.x, sh.y, tx, ty);
+          grad.addColorStop(0, `rgba(255,255,255,${Math.min(1, sh.life) * bright})`);
+          grad.addColorStop(1, "rgba(255,255,255,0)");
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sh.x, sh.y);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+        }
       }
 
       ctx.globalAlpha = 1;
@@ -336,6 +404,43 @@ export default function Studio() {
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
+
+  // Flashlight (device torch) — Android Chrome only; plain white light
+  useEffect(() => {
+    let cancelled = false;
+    async function on() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        if (cancelled) { stream.getTracks().forEach((tr) => tr.stop()); return; }
+        const track = stream.getVideoTracks()[0];
+        const caps = (track.getCapabilities ? track.getCapabilities() : {}) as MediaTrackCapabilities & { torch?: boolean };
+        if (!caps.torch) {
+          stream.getTracks().forEach((tr) => tr.stop());
+          alert(lang === "pt"
+            ? "A lanterna só funciona em celular Android (Chrome). No iPhone não é suportado pelo navegador."
+            : "Flashlight only works on Android phones (Chrome). iPhone browsers don't support it.");
+          setFlash(false);
+          return;
+        }
+        await track.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] });
+        flashRef.current = stream;
+      } catch {
+        setFlash(false);
+      }
+    }
+    if (flash) on();
+    return () => {
+      cancelled = true;
+      if (flashRef.current) { flashRef.current.getTracks().forEach((tr) => tr.stop()); flashRef.current = null; }
+    };
+  }, [flash, lang]);
+
+  // Sleep timer
+  useEffect(() => {
+    if (!timerMin) { setSleeping(false); return; }
+    const id = setTimeout(() => setSleeping(true), timerMin * 60 * 1000);
+    return () => clearTimeout(id);
+  }, [timerMin]);
 
   const slider = "w-full accent-violet";
 
@@ -400,7 +505,7 @@ export default function Studio() {
             </div>
 
             {/* sliders */}
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
               <label className="text-xs font-semibold text-muted">
                 {lang === "pt" ? "Velocidade" : "Speed"}
                 <input type="range" min={0.1} max={3} step={0.1} value={speed} onChange={(e) => setSpeed(+e.target.value)} className={slider} />
@@ -409,6 +514,10 @@ export default function Studio() {
                 {lang === "pt" ? "Brilho" : "Brightness"}
                 <input type="range" min={0.3} max={1.8} step={0.1} value={brightness} onChange={(e) => setBrightness(+e.target.value)} className={slider} />
               </label>
+              <label className="text-xs font-semibold text-muted">
+                {lang === "pt" ? "Estrelas (quantidade)" : "Star density"}
+                <input type="range" min={0.2} max={1} step={0.05} value={density} onChange={(e) => setDensity(+e.target.value)} className={slider} />
+              </label>
             </div>
 
             {/* toggles + actions */}
@@ -416,9 +525,25 @@ export default function Studio() {
               <button onClick={() => setStars((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${stars ? "bg-card text-foreground" : "border border-border text-muted"}`}>
                 ✨ {lang === "pt" ? "Estrelas" : "Stars"}: {stars ? "ON" : "OFF"}
               </button>
-              <button onClick={toggleMusic} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${music ? "bg-gradient-to-r from-pink to-violet text-[#060611]" : "border border-border text-muted"}`}>
-                🎵 {lang === "pt" ? "Modo música" : "Music mode"}: {music ? "ON" : "OFF"}{!pro ? " 🔒" : ""}
+              <button onClick={() => setShooting((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${shooting ? "bg-card text-foreground" : "border border-border text-muted"}`}>
+                🌠 {lang === "pt" ? "Cadentes" : "Shooting"}: {shooting ? "ON" : "OFF"}
               </button>
+              <button onClick={toggleMusic} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${music ? "bg-gradient-to-r from-pink to-violet text-[#060611]" : "border border-border text-muted"}`}>
+                🎵 {lang === "pt" ? "Música" : "Music"}: {music ? "ON" : "OFF"}{!pro ? " 🔒" : ""}
+              </button>
+              <button onClick={() => setFlash((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${flash ? "bg-yellow-300 text-[#060611]" : "border border-border text-muted"}`}>
+                🔦 {lang === "pt" ? "Lanterna" : "Flashlight"}: {flash ? "ON" : "OFF"}
+              </button>
+              <select
+                value={timerMin}
+                onChange={(e) => setTimerMin(+e.target.value)}
+                className="rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground outline-none"
+              >
+                <option value={0}>⏱️ {lang === "pt" ? "Sem timer" : "No timer"}</option>
+                <option value={15}>⏱️ 15 min</option>
+                <option value={30}>⏱️ 30 min</option>
+                <option value={60}>⏱️ 60 min</option>
+              </select>
               <button onClick={goFullscreen} className="btn-primary ml-auto rounded-full px-5 py-2 text-sm">
                 {isFull ? (lang === "pt" ? "Sair" : "Exit") : `▶ ${lang === "pt" ? "Projetar" : "Project"}`}
               </button>
@@ -426,11 +551,21 @@ export default function Studio() {
 
             <p className="mt-3 text-center text-[11px] text-muted">
               {lang === "pt"
-                ? "Dica: espelhe na sua TV (Chromecast / AirPlay) para o efeito completo na parede 📺"
-                : "Tip: cast to your TV (Chromecast / AirPlay) for the full wall effect 📺"}
+                ? "🔦 A lanterna usa o flash do celular (luz branca) · espelhe na TV (Chromecast/AirPlay) para o efeito na parede 📺"
+                : "🔦 Flashlight uses your phone's flash (white light) · cast to your TV (Chromecast/AirPlay) for the wall effect 📺"}
             </p>
           </div>
         </div>
+      )}
+
+      {/* sleep overlay */}
+      {sleeping && (
+        <button
+          onClick={() => { setSleeping(false); setTimerMin(0); }}
+          className="absolute inset-0 z-40 grid place-items-center bg-black text-center text-muted"
+        >
+          <span className="text-sm">💤 {lang === "pt" ? "Toque para acordar" : "Tap to wake"}</span>
+        </button>
       )}
 
       {/* Pro unlock modal */}
