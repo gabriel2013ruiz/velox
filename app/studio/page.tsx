@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import { PixDirect } from "@/components/PixDirect";
+import { pixDirectEnabled } from "@/lib/pix";
+
+const FREE_THEMES = new Set<ThemeKey>(["aurora", "galaxy"]);
+const PRO_PRICE = 19;
 
 type ThemeKey = "aurora" | "galaxy" | "sunset" | "ocean" | "fire" | "forest" | "custom";
 
@@ -52,6 +57,53 @@ export default function Studio() {
   const [music, setMusic] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
   const [isFull, setIsFull] = useState(false);
+
+  // Pro paywall
+  const [pro, setPro] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeErr, setCodeErr] = useState("");
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    try { if (localStorage.getItem("velox_pro") === "1") setPro(true); } catch {}
+  }, []);
+
+  const locked = (k: ThemeKey) => !pro && !FREE_THEMES.has(k);
+  const pickTheme = (k: ThemeKey) => {
+    if (locked(k)) { setUnlockOpen(true); return; }
+    setTheme(k);
+  };
+  const toggleMusic = () => {
+    if (!pro) { setUnlockOpen(true); return; }
+    setMusic((v) => !v);
+  };
+  const submitCode = async () => {
+    setChecking(true); setCodeErr("");
+    try {
+      const r = await fetch("/api/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      }).then((res) => res.json());
+      if (r.ok) {
+        setPro(true);
+        try { localStorage.setItem("velox_pro", "1"); } catch {}
+        setUnlockOpen(false);
+      } else {
+        setCodeErr(lang === "pt" ? "Código inválido. Confira e tente de novo." : "Invalid code. Check and try again.");
+      }
+    } catch {
+      setCodeErr(lang === "pt" ? "Erro de conexão." : "Connection error.");
+    }
+    setChecking(false);
+  };
+  const resetPro = () => {
+    try { localStorage.removeItem("velox_pro"); } catch {}
+    setPro(false);
+    if (!FREE_THEMES.has(theme)) setTheme("aurora");
+    setMusic(false);
+  };
 
   // live settings the animation loop reads without restarting
   const settings = useRef({ theme, custom, speed, brightness, stars, music });
@@ -220,9 +272,21 @@ export default function Studio() {
           <Link href="/" className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 text-sm font-extrabold backdrop-blur">
             <span className="text-aurora">◐</span> VELOX <span className="font-medium text-muted">Studio</span>
           </Link>
-          <button onClick={() => setUiHidden(true)} className="rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-black/60">
-            {lang === "pt" ? "Ocultar controles" : "Hide controls"} ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {pro ? (
+              <>
+                <span className="rounded-full bg-gradient-to-r from-teal to-violet px-3 py-1.5 text-xs font-bold text-[#060611]">PRO ✓</span>
+                <button onClick={resetPro} title="Reset (teste)" className="rounded-full bg-black/40 px-2.5 py-1.5 text-xs font-semibold backdrop-blur hover:bg-black/60">↺</button>
+              </>
+            ) : (
+              <button onClick={() => setUnlockOpen(true)} className="btn-primary rounded-full px-3 py-1.5 text-xs">
+                🔓 {lang === "pt" ? "Virar Pro" : "Go Pro"}
+              </button>
+            )}
+            <button onClick={() => setUiHidden(true)} className="rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-black/60">
+              {lang === "pt" ? "Ocultar" : "Hide"} ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -245,12 +309,12 @@ export default function Studio() {
               {(Object.keys(THEME_LABELS) as ThemeKey[]).map((k) => (
                 <button
                   key={k}
-                  onClick={() => setTheme(k)}
+                  onClick={() => pickTheme(k)}
                   className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                     theme === k ? "bg-gradient-to-r from-teal to-violet text-[#060611]" : "border border-border text-foreground hover:border-white/40"
-                  }`}
+                  } ${locked(k) ? "opacity-70" : ""}`}
                 >
-                  {THEME_LABELS[k].emoji} {THEME_LABELS[k][lang]}
+                  {THEME_LABELS[k].emoji} {THEME_LABELS[k][lang]}{locked(k) ? " 🔒" : ""}
                 </button>
               ))}
               {theme === "custom" && (
@@ -275,8 +339,8 @@ export default function Studio() {
               <button onClick={() => setStars((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${stars ? "bg-card text-foreground" : "border border-border text-muted"}`}>
                 ✨ {lang === "pt" ? "Estrelas" : "Stars"}: {stars ? "ON" : "OFF"}
               </button>
-              <button onClick={() => setMusic((v) => !v)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${music ? "bg-gradient-to-r from-pink to-violet text-[#060611]" : "border border-border text-muted"}`}>
-                🎵 {lang === "pt" ? "Modo música" : "Music mode"}: {music ? "ON" : "OFF"}
+              <button onClick={toggleMusic} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${music ? "bg-gradient-to-r from-pink to-violet text-[#060611]" : "border border-border text-muted"}`}>
+                🎵 {lang === "pt" ? "Modo música" : "Music mode"}: {music ? "ON" : "OFF"}{!pro ? " 🔒" : ""}
               </button>
               <button onClick={goFullscreen} className="btn-primary ml-auto rounded-full px-5 py-2 text-sm">
                 {isFull ? (lang === "pt" ? "Sair" : "Exit") : `▶ ${lang === "pt" ? "Projetar" : "Project"}`}
@@ -288,6 +352,72 @@ export default function Studio() {
                 ? "Dica: espelhe na sua TV (Chromecast / AirPlay) para o efeito completo na parede 📺"
                 : "Tip: cast to your TV (Chromecast / AirPlay) for the full wall effect 📺"}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pro unlock modal */}
+      {unlockOpen && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" onClick={() => setUnlockOpen(false)}>
+          <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-xl font-extrabold">🔓 Velox Studio <span className="text-aurora">Pro</span></h3>
+              <button onClick={() => setUnlockOpen(false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border hover:bg-white/10">✕</button>
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              {lang === "pt"
+                ? "Desbloqueie tudo, para sempre, com um único pagamento."
+                : "Unlock everything, forever, with a single payment."}
+            </p>
+
+            <ul className="mt-4 space-y-1.5 text-sm">
+              {[
+                { pt: "Todos os 6 temas + cores personalizadas", en: "All 6 themes + custom colors" },
+                { pt: "Modo música (reage ao som)", en: "Music mode (reacts to sound)" },
+                { pt: "Sem anúncios, atualizações grátis", en: "No ads, free updates" },
+              ].map((b) => (
+                <li key={b.en} className="flex items-center gap-2"><span className="text-teal">✓</span> {b[lang]}</li>
+              ))}
+            </ul>
+
+            <div className="mt-4 flex items-end gap-2">
+              <span className="text-3xl font-extrabold">R$ {PRO_PRICE},00</span>
+              <span className="mb-1 text-sm text-muted">{lang === "pt" ? "pagamento único" : "one-time"}</span>
+            </div>
+
+            {pixDirectEnabled ? (
+              <div className="mt-3 -mx-4">
+                <PixDirect amount={PRO_PRICE} txid="PRO" />
+              </div>
+            ) : (
+              <p className="mt-3 rounded-xl bg-card-2/50 p-3 text-xs text-muted">
+                {lang === "pt" ? "Pix será exibido aqui quando a chave estiver configurada." : "Pix will appear here once the key is configured."}
+              </p>
+            )}
+
+            <div className="mt-4 rounded-xl border border-border bg-card-2/40 p-4">
+              <p className="text-sm font-semibold">
+                {lang === "pt" ? "Já pagou? Digite o código que você recebeu:" : "Already paid? Enter the code you received:"}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitCode()}
+                  placeholder={lang === "pt" ? "Código" : "Code"}
+                  className="flex-1 rounded-xl border border-border bg-background/40 px-3 py-2 text-sm uppercase outline-none focus:border-violet/60"
+                />
+                <button onClick={submitCode} disabled={checking || !code} className="btn-primary rounded-xl px-4 py-2 text-sm disabled:opacity-60">
+                  {checking ? "..." : lang === "pt" ? "Desbloquear" : "Unlock"}
+                </button>
+              </div>
+              {codeErr && <p className="mt-2 text-xs text-pink">{codeErr}</p>}
+              <p className="mt-2 text-[11px] text-muted">
+                {lang === "pt"
+                  ? "Após o Pix cair no seu Nubank, você envia o código ao cliente."
+                  : "After the Pix lands in your Nubank, you send the customer the code."}
+              </p>
+            </div>
           </div>
         </div>
       )}
