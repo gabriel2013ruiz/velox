@@ -69,6 +69,14 @@ export const dict: Dict = {
   "gallery.sub": { pt: "Imagens reais do efeito Velox Aurora em ação.", en: "Real photos of the Velox Aurora effect in action." },
   "gallery.cta": { pt: "Quero esse efeito no meu quarto", en: "I want this in my room" },
 
+  "demo.title": { pt: "Veja o efeito no seu quarto", en: "See the effect in your room" },
+  "demo.sub": { pt: "Arraste para comparar: luz apagada × Velox Aurora ligado.", en: "Drag to compare: lights off × Velox Aurora on." },
+  "demo.off": { pt: "Sem Velox", en: "Without Velox" },
+  "demo.on": { pt: "Com Velox ✨", en: "With Velox ✨" },
+  "demo.hint": { pt: "← arraste →", en: "← drag →" },
+  "demo.cta": { pt: "Quero o meu agora", en: "I want mine now" },
+  "demo.close": { pt: "Fechar", en: "Close" },
+
   "reviews.title": { pt: "+12.000 clientes apaixonados", en: "12,000+ happy customers" },
   "reviews.sub": { pt: "Avaliações reais de quem já transformou o quarto.", en: "Real reviews from people who transformed their rooms." },
 

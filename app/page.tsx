@@ -5,10 +5,12 @@ import { Nav } from "@/components/Nav";
 import { CartDrawer, Toast } from "@/components/CartDrawer";
 import { ProjectorVisual } from "@/components/ProjectorVisual";
 import { Gallery } from "@/components/Gallery";
+import { InteractiveDemo } from "@/components/InteractiveDemo";
 import { Stars } from "@/components/Stars";
 import { PaymentRow } from "@/components/PaymentIcons";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
+import { useDemo } from "@/lib/demo";
 import { bundles, reviews, priceFor, compareFor, formatMoney } from "@/lib/products";
 
 /* ---------- Announcement marquee ---------- */
@@ -30,6 +32,7 @@ function Announcement() {
 /* ---------- Hero ---------- */
 function Hero() {
   const { t, lang } = useI18n();
+  const { setOpen: setDemoOpen } = useDemo();
   return (
     <section id="top" className="aurora relative">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 py-14 md:grid-cols-2 md:py-20">
@@ -44,9 +47,9 @@ function Hero() {
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a href="#buy" className="btn-primary rounded-full px-7 py-3.5 text-base">{t("hero.cta")}</a>
-            <a href="#how" className="rounded-full border border-border px-6 py-3.5 text-base hover:border-white/40 transition">
-              {t("hero.cta2")}
-            </a>
+            <button onClick={() => setDemoOpen(true)} className="rounded-full border border-border px-6 py-3.5 text-base hover:border-white/40 transition">
+              ▶ {t("hero.cta2")}
+            </button>
           </div>
 
           <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted">
@@ -57,12 +60,15 @@ function Hero() {
         </div>
 
         <div className="fade-up relative">
-          <div className="relative overflow-hidden rounded-[28px] border border-border pulse-glow">
+          <button
+            onClick={() => setDemoOpen(true)}
+            className="group relative block w-full overflow-hidden rounded-[28px] border border-border pulse-glow text-left"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/products/hero.jpg"
-              alt="Velox Aurora projetando uma galáxia"
-              className="aspect-[4/5] w-full object-cover sm:aspect-[5/4]"
+              alt="Velox Aurora projetando uma aurora boreal"
+              className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105 sm:aspect-[5/4]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#060611]/70 via-transparent to-transparent" />
             <div className="absolute left-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-bold tracking-[0.25em] backdrop-blur">
@@ -71,7 +77,11 @@ function Hero() {
             <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold backdrop-blur">
               <Stars n={5} /> 4,9 · 12.480
             </div>
-          </div>
+            {/* play affordance */}
+            <span className="absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-white/15 backdrop-blur border border-white/40 text-2xl">▶</span>
+            </span>
+          </button>
           {/* floating projector chip */}
           <div className="absolute -bottom-6 -right-2 hidden w-36 rotate-3 sm:block">
             <ProjectorVisual />
@@ -372,6 +382,7 @@ export default function Home() {
       </main>
       <Footer />
       <CartDrawer />
+      <InteractiveDemo />
       <Toast />
     </>
   );

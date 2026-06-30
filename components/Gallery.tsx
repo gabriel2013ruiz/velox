@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useDemo } from "@/lib/demo";
 
 const IMAGES = [
   "/products/g1.jpg",
@@ -17,6 +18,7 @@ const IMAGES = [
 
 export function Gallery() {
   const { t } = useI18n();
+  const { setOpen: setDemoOpen } = useDemo();
   const [active, setActive] = useState<number | null>(null);
 
   useEffect(() => {
@@ -60,7 +62,9 @@ export function Gallery() {
       </div>
 
       <div className="mt-10 text-center">
-        <a href="#buy" className="btn-primary inline-flex rounded-full px-7 py-3.5 text-base">{t("gallery.cta")}</a>
+        <button onClick={() => setDemoOpen(true)} className="btn-primary inline-flex rounded-full px-7 py-3.5 text-base">
+          {t("gallery.cta")}
+        </button>
       </div>
 
       {/* lightbox */}
